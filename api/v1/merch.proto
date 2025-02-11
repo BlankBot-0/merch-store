@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package store;
+
+option go_package = "github.com/BlankBot-0/merch-store/api/v1";
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+// how to return errors?
+service MerchStore {
+  rpc Info(InfoRequest) returns (InfoResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/echo/{user_id}"
+      body: "data"
+      response_body: "data"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      responses: {
+        key: "400"
+        value: {
+          description: "Неверный запрос",
+          schema: {
+            json_schema: {ref: ".google.rpc.Status"}
+          }
+          examples: {
+            key: "application/json"
+            value: '{ "errors": "string" }'
+          }
+        }
+      }
+    };
+  };
+  rpc SendCoin(SendCoinRequest) returns (empty);
+  rpc BuyItem(BuyItemRequest) returns (empty);
+  rpc Auth(AuthRequest) returns (authResponse);
+}
+
+message InfoRequest {
+  int64 user_id = 1;
+}
+
+message InfoResponse {
+  int64 coins = 1;
+  repeated item inventory = 2;
+  coinHistory coinHistory = 3;
+}
+message coinHistory {
+  repeated sendCoinEntry sent = 2;
+  repeated receiveCoinEntry received = 3;
+}
+message sendCoinEntry {
+  string toUser = 1;
+  int64 quantity = 2;
+}
+message receiveCoinEntry {
+  string fromUser = 1;
+  int64 quantity = 2;
+}
+
+message SendCoinRequest {
+  string toUser = 1;
+  int64 quantity = 2;
+}
+
+message BuyItemRequest {
+  int64 user_id = 1;
+  string item_id = 2;
+}
+message item {
+  string type = 1;
+  int64 quantity = 2;
+}
+
+message AuthRequest {
+  string login = 1;
+  string password = 2;
+}
+message authResponse {
+  string token = 1;
+}
+
+message empty {
+
+}
