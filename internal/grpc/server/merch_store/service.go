@@ -1,25 +1,31 @@
 package merch_store
 
-import "context"
+import (
+	"Merch/internal/models"
+	merch "Merch/pkg/api/v1"
+	"context"
+)
 
-type Repository interface {
-	Info(ctx context.Context, userId int) (indoDTO, error)
-	SendCoin(ctx context.Context, fromUserId, toUserId, coins int) error
-	BuyItem(ctx context.Context, userId, itemId int) error
-}
+type (
+	Authenticator interface {
+		UserToken(ctx context.Context, credentials models.CredentialsDTO) (string, error)
+		UserAuth(ctx context.Context, token string) (int64, error)
+	}
 
-type Auth interface {
-	Token(ctx context.Context, credentials CredentialsDTO) (string, error)
-	Auth(ctx context.Context, token string) error
-}
+	Repository interface {
+		Info(ctx context.Context, userId int64) (models.UserInfo, error)
+		BuyItem(ctx context.Context, userId int64, itemType string) error
+		SendCoins(ctx context.Context, fromUserId int64, toUserLogin string, amount int64) error
+	}
+)
 
 type Deps struct {
 	Repository Repository
-	Auth       Auth
+	Auth       Authenticator
 }
 
 type Service struct {
-	app.Server
+	merch.MerchStoreServer
 	Deps Deps
 }
 
