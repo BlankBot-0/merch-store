@@ -119,11 +119,11 @@ func (ro *roSalesPlatformRepository) UserReceivedOperations(ctx context.Context,
 	return received, nil
 }
 
-func (ro *roSalesPlatformRepository) UserCredentials(ctx context.Context, userLogin string) (models.UserCredentials, error) {
-	const queryName = "SalesPlatformRepository/UserCredentials"
+func (ro *roSalesPlatformRepository) UserPasswordId(ctx context.Context, userLogin string) (models.InfoForTokenDTO, error) {
+	const queryName = "SalesPlatformRepository/UserPassword"
 	const q = `
-               select login, password from users where login = $1`
-	var cred models.UserCredentials
+               select login, id from users where login = $1`
+	var cred models.InfoForTokenDTO
 	if err := pgxscan.Get(ctx, ro.query, &cred, q, userLogin); err != nil {
 		return cred, formatError(queryName, err)
 	}
@@ -179,7 +179,9 @@ func (rw *rwSalesPlatformRepository) AddPurchase(ctx context.Context, userId, it
                insert into purchases(user_id, item_id)
                values ($1, $2)`
 
-	if err := pgxscan.Get(ctx, rw.exec, nil, q, userId, itemId); err != nil {
+	if err := pgxscan.Get(ctx, rw.exec, nil, q, userId, itemId); errIsNoRows(err) {
+		return formatError(queryName, ErrNotFound)
+	} else if err != nil {
 		return formatError(queryName, err)
 	}
 

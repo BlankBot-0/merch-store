@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"Merch/internal/usecase/auth"
 	"Merch/internal/usecase/merch_platform"
 	"context"
 	"fmt"
@@ -38,6 +39,10 @@ func (db *Database) RWSalesPlatform() merch_platform.RWSalesPlatform {
 		ROSalesPlatform: db.ROSalesPlatform(),
 		exec:            dbWriter{db.pool},
 	}
+}
+
+func (db *Database) CredentialsRepository() auth.CredentialsRepository {
+	return &credentialsRepository{query: dbReader{db.pool}}
 }
 
 // WriteTx is an active writeable and readable transaction launched by a Database instance.

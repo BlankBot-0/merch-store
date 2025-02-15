@@ -15,7 +15,6 @@ type (
 		Item(ctx context.Context, itemType string) (models.Item, error)
 		UserSendOperations(ctx context.Context, userId int64) ([]models.Transaction, error)
 		UserReceivedOperations(ctx context.Context, userId int64) ([]models.Transaction, error)
-		UserCredentials(ctx context.Context, userLogin string) (models.UserCredentials, error)
 	}
 
 	// RWSalesPlatform is a read-write repository
@@ -78,13 +77,13 @@ func (s *MerchPlatform) BuyItem(ctx context.Context, userId int64, itemType stri
 	return err
 }
 
-func (s *MerchPlatform) SendCoins(ctx context.Context, fromUserid int64, toUserLogin string, amount int64) error {
+func (s *MerchPlatform) SendCoins(ctx context.Context, fromUserId int64, toUserLogin string, amount int64) error {
 	if amount <= 0 {
 		return ErrIncorrectAmount
 	}
 
 	err := s.Deps.repo.RunInTx(ctx, func(tx RepositoryProvider) error {
-		sender, err := tx.ROSalesPlatform().UserById(ctx, fromUserid)
+		sender, err := tx.ROSalesPlatform().UserById(ctx, fromUserId)
 		if err != nil {
 			return err
 		}
@@ -98,7 +97,7 @@ func (s *MerchPlatform) SendCoins(ctx context.Context, fromUserid int64, toUserL
 			return err
 		}
 
-		err = tx.RWSalesPlatform().RemoveCoins(ctx, fromUserid, amount)
+		err = tx.RWSalesPlatform().RemoveCoins(ctx, fromUserId, amount)
 		if err != nil {
 			return err
 		}
