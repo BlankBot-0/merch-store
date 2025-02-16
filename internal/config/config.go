@@ -9,17 +9,22 @@ import (
 )
 
 type Config struct {
-	Env        string `yaml:"env" env-default:"local"`
-	Dsn        string `yaml:"dsn"`
-	PrivateKey string `yaml:"private_key"`
-	PublicKey  string `yaml:"public_key"`
-	HTTPServer `yaml:"http_server"`
-	Auth       Auth  `yaml:"auth"`
-	Cache      Cache `yaml:"cache"`
+	Env        string     `yaml:"env" env-default:"local"`
+	Dsn        string     `yaml:"dsn"`
+	PrivateKey string     `yaml:"private_key"`
+	PublicKey  string     `yaml:"public_key"`
+	HTTPServer HTTPServer `yaml:"http_server"`
+	GRPCServer GRPCServer `yaml:"grpc_server"`
+	Auth       Auth       `yaml:"auth"`
+	Cache      Cache      `yaml:"cache"`
+}
+
+type GRPCServer struct {
+	Port string `yaml:"port" env-default:"8080"`
 }
 
 type HTTPServer struct {
-	Address     string        `yaml:"address" env-default:"localhost:8080"`
+	Port        string        `yaml:"port" env-default:"8080"`
 	Timeout     time.Duration `yaml:"timeout" env-default:"5s"`
 	IdleTimeout time.Duration `yaml:"idleTimeout" env-default:"60s"`
 }

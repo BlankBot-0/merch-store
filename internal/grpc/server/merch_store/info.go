@@ -1,6 +1,7 @@
 package merch_store
 
 import (
+	"Merch/internal/auth"
 	"Merch/internal/models"
 	merch "Merch/pkg/api/v1"
 	"context"
@@ -8,7 +9,7 @@ import (
 )
 
 func (s *Service) Info(ctx context.Context, request *merch.InfoRequest) (*merch.InfoResponse, error) {
-	res, err := s.Deps.Repository.Info(ctx, int64(0))
+	res, err := s.Deps.Shop.Info(ctx, auth.GetUserIDFromCtx(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -23,13 +24,13 @@ func (s *Service) Info(ctx context.Context, request *merch.InfoRequest) (*merch.
 		CoinHistory: &merch.InfoResponseCoinHistoryMessage{
 			Sent: lo.Map(res.Sent, func(t models.Transaction, index int) *merch.InfoResponseCoinHistoryMessageSendCoinEntry {
 				return &merch.InfoResponseCoinHistoryMessageSendCoinEntry{
-					ToUser: t.User,
+					ToUser: t.Receiver,
 					Amount: t.Amount,
 				}
 			}),
 			Received: lo.Map(res.Received, func(t models.Transaction, index int) *merch.InfoResponseCoinHistoryMessageReceiveCoinEntry {
 				return &merch.InfoResponseCoinHistoryMessageReceiveCoinEntry{
-					FromUser: t.User,
+					FromUser: t.Sender,
 					Amount:   t.Amount,
 				}
 			}),

@@ -424,7 +424,7 @@ func (m *BuyItemRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Item
+	// no validation rules for GetItem
 
 	if len(errors) > 0 {
 		return BuyItemRequestMultiError(errors)

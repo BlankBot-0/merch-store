@@ -1,8 +1,13 @@
 package main
 
 import (
+	"Merch/internal/auth"
+	"Merch/internal/config"
 	"Merch/internal/grpc/server/merch_store"
-	"Merch/internal/postgres/mock"
+	"Merch/internal/mw"
+	"Merch/internal/postgres"
+	authService "Merch/internal/usecase/auth"
+	"Merch/internal/usecase/shop"
 	pb "Merch/pkg/api/v1"
 	"context"
 	"fmt"
@@ -17,18 +22,30 @@ import (
 )
 
 func main() {
-	//cfg := config.MustLoad()
-	//ctx := context.Background()
-	grpcServer := grpc.NewServer()
+	cfg := config.MustLoad()
+	ctx := context.Background()
+	authCore := auth.New(cfg.Auth)
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(mw.AuthInterceptor(authCore)))
 
-	//conn, err := postgres.Connect(ctx, cfg.Dsn)
-	//if err != nil {
-	//	log.Fatalf("db connection failed: %s", err)
-	//}
+	conn, err := postgres.Connect(ctx, cfg.Dsn)
+	if err != nil {
+		log.Fatalf("db connection failed: %s", err)
+	}
+
+	shop := shop.New(shop.Deps{
+		Repo: conn,
+	})
+	authService := authService.NewAuthService(authService.Deps{
+		Authenticator: authCore,
+		Repo:          conn,
+	})
 
 	service := merch_store.NewService(merch_store.Deps{
-		Repository: &mock.MerchPlatformMock{},
+		Shop: shop,
+		Auth: authService,
 	})
+
+	grpc.WithChainUnaryInterceptor()
 
 	gatewayMux := runtime.NewServeMux()
 
@@ -36,8 +53,8 @@ func main() {
 
 	reflection.Register(grpcServer)
 
-	port := 7000
-	tcpListener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	port := cfg.GRPCServer.Port
+	tcpListener, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Fatalf("failed to listen tcp: %s", err)
 	}
@@ -46,7 +63,7 @@ func main() {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		log.Printf("running grpc server on port %d\n", port)
+		log.Printf("running grpc server on port %s\n", port)
 		if err := grpcServer.Serve(tcpListener); err != nil {
 			log.Printf("failed to serve grpc server: %s", err)
 		}
@@ -71,13 +88,13 @@ func main() {
 
 		mux := http.NewServeMux()
 		mux.Handle("/", gatewayMux)
-		httpPort := 7001
+		httpPort := cfg.HTTPServer.Port
 		gwServer := &http.Server{
-			Addr:    fmt.Sprintf(":%d", httpPort),
+			Addr:    fmt.Sprintf(":%s", httpPort),
 			Handler: mux,
 		}
 
-		log.Printf("running http server on port %d\n", httpPort)
+		log.Printf("running http server on port %s\n", httpPort)
 
 		if err := gwServer.ListenAndServe(); err != nil {
 			log.Printf("failed to serve http server: %s", err)

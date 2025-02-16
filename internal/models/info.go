@@ -13,9 +13,10 @@ type UserCredentials struct {
 }
 
 type User struct {
-	Id    int64  `db:"id"`
-	Login string `db:"login"`
-	Coins int64  `db:"coins"`
+	Id           int64  `db:"id"`
+	Login        string `db:"login"`
+	PasswordHash string `db:"password_hash"`
+	Coins        int64  `db:"coins"`
 }
 
 type InventoryItem struct {
@@ -30,6 +31,7 @@ type Item struct {
 }
 
 type Transaction struct {
-	User   string
-	Amount int64
+	Receiver string
+	Sender   string
+	Amount   int64
 }

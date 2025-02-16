@@ -1,8 +1,6 @@
 package postgres
 
 import (
-	"Merch/internal/usecase/auth"
-	"Merch/internal/usecase/merch_platform"
 	"context"
 	"fmt"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -28,21 +26,26 @@ func (db *Database) Close() {
 	db.pool.Close()
 }
 
-// ROSalesPlatform returns a user postgres which will use this database for querying.
-func (db *Database) ROSalesPlatform() merch_platform.ROSalesPlatform {
-	return &roSalesPlatformRepository{query: dbReader{db.pool}}
+func (db *Database) ROShop() ROShop {
+	return &roShop{query: dbReader{db.pool}}
 }
 
-// RWSalesPlatform returns a user postgres which will use this database for querying and executing.
-func (db *Database) RWSalesPlatform() merch_platform.RWSalesPlatform {
-	return &rwSalesPlatformRepository{
-		ROSalesPlatform: db.ROSalesPlatform(),
-		exec:            dbWriter{db.pool},
+func (db *Database) RWShop() RWShop {
+	return &rwShop{
+		ROShop: db.ROShop(),
+		exec:   dbWriter{db.pool},
 	}
 }
 
-func (db *Database) CredentialsRepository() auth.CredentialsRepository {
-	return &credentialsRepository{query: dbReader{db.pool}}
+func (db *Database) ROUsers() ROUsers {
+	return &roUsers{query: dbReader{db.pool}}
+}
+
+func (db *Database) RWUsers() RWUsers {
+	return &rwUsers{
+		ROUsers: db.ROUsers(),
+		exec:    dbWriter{db.pool},
+	}
 }
 
 // WriteTx is an active writeable and readable transaction launched by a Database instance.
@@ -51,21 +54,30 @@ type WriteTx struct {
 	wrapped pgx.Tx
 }
 
-// ROSalesPlatform returns a user postgres which will user this transaction for querying.
-func (tx *WriteTx) ROSalesPlatform() merch_platform.ROSalesPlatform {
-	return &roSalesPlatformRepository{query: tx.wrapped}
+func (tx *WriteTx) ROShop() ROShop {
+	return &roShop{query: tx.wrapped}
 }
 
-// RWSalesPlatform returns a user postgres which will user this transaction for querying and execution.
-func (tx *WriteTx) RWSalesPlatform() merch_platform.RWSalesPlatform {
-	return &rwSalesPlatformRepository{
-		ROSalesPlatform: tx.ROSalesPlatform(),
-		exec:            tx.wrapped,
+func (tx *WriteTx) RWShop() RWShop {
+	return &rwShop{
+		ROShop: tx.ROShop(),
+		exec:   tx.wrapped,
+	}
+}
+
+func (tx *WriteTx) ROUsers() ROUsers {
+	return &roUsers{query: tx.wrapped}
+}
+
+func (tx *WriteTx) RWUsers() RWUsers {
+	return &rwUsers{
+		ROUsers: tx.ROUsers(),
+		exec:    tx.wrapped,
 	}
 }
 
 // RunInTx runs the specified function in a transaction which supports writing and reading.
-func (db *Database) RunInTx(ctx context.Context, f func(tx merch_platform.RepositoryProvider) error, isoLevel pgx.TxIsoLevel) error {
+func (db *Database) RunInTx(ctx context.Context, f func(tx RepositoryProvider) error, isoLevel pgx.TxIsoLevel) error {
 	tx, err := db.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: isoLevel})
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)

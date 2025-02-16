@@ -7,21 +7,19 @@ import (
 )
 
 type (
-	Authenticator interface {
-		UserToken(ctx context.Context, credentials models.CredentialsDTO) (string, error)
-		UserAuth(ctx context.Context, token string) (int64, error)
-	}
-
-	Repository interface {
-		Info(ctx context.Context, userId int64) (models.UserInfo, error)
+	Shop interface {
 		BuyItem(ctx context.Context, userId int64, itemType string) error
 		SendCoins(ctx context.Context, fromUserId int64, toUserLogin string, amount int64) error
+		Info(ctx context.Context, userId int64) (models.UserInfo, error)
+	}
+	Authenticator interface {
+		UserToken(ctx context.Context, credentials models.CredentialsDTO) (string, error)
 	}
 )
 
 type Deps struct {
-	Repository Repository
-	Auth       Authenticator
+	Shop Shop
+	Auth Authenticator
 }
 
 type Service struct {

@@ -4,7 +4,7 @@ create table users
 (
     id       bigserial primary key,
     login    text,
-    password text,
+    password_hash text,
     coins    integer not null
 );
 

@@ -1,4 +1,4 @@
-package merch_platform
+package shop
 
 import "errors"
 

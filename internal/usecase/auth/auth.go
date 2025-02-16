@@ -3,52 +3,73 @@ package auth
 import (
 	"Merch/internal/auth"
 	"Merch/internal/models"
+	"Merch/internal/postgres"
 	"context"
+	"errors"
+	"fmt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type (
-	Authenticator interface {
-		UserToken(ctx context.Context, userId int64) (string, error)
-		UserAuth(ctx context.Context, token string) (int64, error)
-	}
-	CredentialsRepository interface {
-		UserPasswordId(ctx context.Context, userLogin string) (models.InfoForTokenDTO, error)
-	}
-	RepositoryProvider interface {
-		CredentialsRepository() CredentialsRepository
+	Issuer interface {
+		Issue(userId int64) (string, error)
 	}
 )
 
 type Deps struct {
-	Authenticator Authenticator
-	Repo          CredentialsRepository
+	Authenticator Issuer
+	Repo          postgres.DB
 }
-type AuthSystem struct {
+type AuthService struct {
 	Deps
 }
 
-func NewAuthenticationSystem(deps Deps) *AuthSystem {
-	return &AuthSystem{
+func NewAuthService(deps Deps) *AuthService {
+	return &AuthService{
 		Deps: deps,
 	}
 }
 
-func (a *AuthSystem) UserToken(ctx context.Context, credentials models.CredentialsDTO) (string, error) {
-	tokenInfo, err := a.Repo.UserPasswordId(ctx, credentials.Username)
+func (a *AuthService) UserToken(ctx context.Context, credentials models.CredentialsDTO) (string, error) {
+	passwordHashRaw, err := bcrypt.GenerateFromPassword([]byte(credentials.Password), bcrypt.MinCost)
 	if err != nil {
-		return "", auth.ErrUnauthorized
-	}
-	if tokenInfo.Password != credentials.Password {
-		return "", auth.ErrUnauthorized
+		return "", fmt.Errorf("could not hash password: %w", err)
 	}
 
-	token, err := a.Deps.Authenticator.UserToken(ctx, tokenInfo.Id)
+	passwordHash := string(passwordHashRaw)
+	tokenInfo, err := a.Repo.ROUsers().UserByLogin(ctx, credentials.Username)
+
+	switch {
+	case errors.Is(err, postgres.ErrNotFound):
+		id, err := a.createUser(ctx, credentials.Username, passwordHash)
+		if err != nil {
+			return "", fmt.Errorf("could not create user: %w", err)
+		}
+		tokenInfo.Id = id
+	case err != nil:
+		return "", fmt.Errorf("could not get user: %w", err)
+	default:
+		if tokenInfo.PasswordHash != passwordHash {
+			return "", auth.ErrUnauthorized
+		}
+	}
+
+	token, err := a.Deps.Authenticator.Issue(tokenInfo.Id)
 	if err != nil {
 		return "", err
 	}
 	return token, nil
 }
 
-func (a *AuthSystem) UserAuth(ctx context.Context, token string) (int64, error) {
-	return a.Deps.Authenticator.UserAuth(ctx, token)
+func (a *AuthService) createUser(ctx context.Context, login, passwordHash string) (int64, error) {
+	id, err := a.Deps.Repo.RWUsers().CreateUser(ctx, login, passwordHash)
+	if errors.Is(err, postgres.ErrAlreadyExists) {
+		return 0, ErrUserAlreadyExists
+	} else if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }
+
+var ErrUserAlreadyExists = errors.New("user already exists")
