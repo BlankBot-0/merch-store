@@ -3,15 +3,21 @@ package merch_store
 import (
 	"Merch/internal/auth"
 	"Merch/internal/models"
+	"Merch/internal/usecase/shop"
 	merch "Merch/pkg/api/v1"
 	"context"
+	"errors"
 	"github.com/samber/lo"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func (s *Service) Info(ctx context.Context, request *merch.InfoRequest) (*merch.InfoResponse, error) {
 	res, err := s.Deps.Shop.Info(ctx, auth.GetUserIDFromCtx(ctx))
-	if err != nil {
-		return nil, err
+	if errors.Is(err, shop.ErrUserIsNotFound) {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &merch.InfoResponse{
 		Coins: res.Coins,
