@@ -322,7 +322,16 @@ func (m *SendCoinRequest) validate(all bool) error {
 
 	// no validation rules for ToUser
 
-	// no validation rules for Amount
+	if m.GetAmount() <= 0 {
+		err := SendCoinRequestValidationError{
+			field:  "Amount",
+			reason: "value must be greater than 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return SendCoinRequestMultiError(errors)
@@ -424,7 +433,7 @@ func (m *BuyItemRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for GetItem
+	// no validation rules for Item
 
 	if len(errors) > 0 {
 		return BuyItemRequestMultiError(errors)
@@ -526,9 +535,27 @@ func (m *AuthRequest) validate(all bool) error {
 
 	var errors []error
 
-	// no validation rules for Login
+	if utf8.RuneCountInString(m.GetLogin()) < 3 {
+		err := AuthRequestValidationError{
+			field:  "Login",
+			reason: "value length must be at least 3 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
-	// no validation rules for Password
+	if utf8.RuneCountInString(m.GetPassword()) < 8 {
+		err := AuthRequestValidationError{
+			field:  "Password",
+			reason: "value length must be at least 8 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return AuthRequestMultiError(errors)

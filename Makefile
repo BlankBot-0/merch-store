@@ -137,15 +137,18 @@ fast-generate: .protoc-generate
 
 GOOSE = "$$PATH:$(LOCAL_BIN)" goose
 
+MIGRATIONS_DIR = "migrations/sql"
+DATABASE_NAME = "shop"
+
 .PHONY: .install_goose
 .install_goose:
 	GOBIN=$(LOCAL_BIN) go install github.com/pressly/goose/v3/cmd/goose@latest
 
 PHONY: migrate
 migrate: .install_goose
-	$(GOOSE) -dir ./migrations postgres postgresql://postgres:password@localhost:6544/postgres up
+	$(GOOSE) -dir ./migrations/sql postgres postgresql://postgres:password@localhost:5432/shop up
 
 PHONY: reset-migrations
 reset-migrations: .install_goose
-	$(GOOSE) -dir ./migrations postgres postgresql://postgres:password@localhost:6544/postgres reset
+	$(GOOSE) -dir ${MIGRATIONS_DIR} postgres postgresql://postgres:password@localhost:5432/${DATABASE_NAME} reset
 
