@@ -10,6 +10,7 @@ type ShopServiceFake struct {
 	FakeInfo         models.UserInfo
 	FakeUsersById    map[int64]UserFake
 	FakeUsersByLogin map[string]UserFake
+	FakeItemsByType  map[string]models.Item
 }
 
 type UserFake struct {
@@ -18,7 +19,18 @@ type UserFake struct {
 	Coins int64
 }
 
-func (s *ShopServiceFake) BuyItem(_ context.Context, _ int64, _ string) error {
+func (s *ShopServiceFake) BuyItem(_ context.Context, userId int64, itemType string) error {
+	usr, ok := s.FakeUsersById[userId]
+	if !ok {
+		return shop.ErrUserIsNotFound
+	}
+	itm, ok := s.FakeItemsByType[itemType]
+	if !ok {
+		return shop.ErrItemIsNotFound
+	}
+	if usr.Coins < itm.Coins {
+		return shop.ErrNotEnoughCoins
+	}
 	return nil
 }
 
@@ -29,6 +41,9 @@ func (s *ShopServiceFake) SendCoins(_ context.Context, receiverId int64, _ strin
 	return nil
 }
 
-func (s *ShopServiceFake) Info(_ context.Context, _ int64) (models.UserInfo, error) {
+func (s *ShopServiceFake) Info(_ context.Context, userid int64) (models.UserInfo, error) {
+	if _, ok := s.FakeUsersById[userid]; !ok {
+		return models.UserInfo{}, shop.ErrUserIsNotFound
+	}
 	return s.FakeInfo, nil
 }
