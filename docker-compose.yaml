@@ -5,7 +5,7 @@ services:
     build: .
     container_name: avito-shop-service
     ports:
-      - "8080:8080"
+      - "8080:7001"
     environment:
       # енвы подключения к БД
       - DATABASE_PORT=5432
