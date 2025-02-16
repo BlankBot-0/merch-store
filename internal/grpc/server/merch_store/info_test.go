@@ -38,9 +38,14 @@ func TestService_Shop_Info(t *testing.T) {
 	fakeShop := fake.ShopServiceFake{
 		FakeInfo: fakeInfo,
 	}
+	//fakeAuth := fake.AuthServiceFake{
+	//	Token: fakeToken,
+	//}
+	//ctx := auth.SetUserIDToCtx(context.Background(), 2)
 
 	service := NewService(Deps{
 		Shop: &fakeShop,
+		//Auth: fakeAuth,
 	})
 
 	resp, err := service.Info(context.Background(), &pb.InfoRequest{})

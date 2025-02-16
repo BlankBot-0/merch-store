@@ -34,16 +34,18 @@ func (s *ShopServiceFake) BuyItem(_ context.Context, userId int64, itemType stri
 	return nil
 }
 
-func (s *ShopServiceFake) SendCoins(_ context.Context, receiverId int64, _ string, _ int64) error {
-	if _, ok := s.FakeUsersById[receiverId]; !ok {
+func (s *ShopServiceFake) SendCoins(_ context.Context, senderId int64, receiverLogin string, amount int64) error {
+	if _, ok := s.FakeUsersByLogin[receiverLogin]; !ok {
 		return shop.ErrUserIsNotFound
+	}
+	if sender, ok := s.FakeUsersById[senderId]; !ok {
+		return shop.ErrUserIsNotFound
+	} else if sender.Coins < amount {
+		return shop.ErrNotEnoughCoins
 	}
 	return nil
 }
 
 func (s *ShopServiceFake) Info(_ context.Context, userid int64) (*models.UserInfo, error) {
-	if _, ok := s.FakeUsersById[userid]; !ok {
-		return nil, shop.ErrUserIsNotFound
-	}
 	return &s.FakeInfo, nil
 }

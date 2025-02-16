@@ -39,7 +39,7 @@ func TestService_BuyItem_InvalidArgument(t *testing.T) {
 		},
 		{
 			name:     "non existent user",
-			userId:   0,
+			userId:   50,
 			itemType: "bipki",
 		},
 	}
@@ -52,7 +52,7 @@ func TestService_BuyItem_InvalidArgument(t *testing.T) {
 				FakeItemsByType: fakeItemsByType,
 			}
 			fakeAuth := &fake.AuthServiceFake{Token: fakeToken}
-			auth.SetUserIDToCtx(ctx, tc.userId)
+			ctx = auth.SetUserIDToCtx(ctx, tc.userId)
 
 			service := NewService(Deps{
 				Shop: &fakeShop,
@@ -71,5 +71,33 @@ func TestService_BuyItem_InvalidArgument(t *testing.T) {
 				t.Fatalf("expected invalid argument code, got: %s", s.Code().String())
 			}
 		})
+	}
+}
+
+func TestService_BuyItem_FailedPrecondition(t *testing.T) {
+	var ctx = context.Background()
+	fakeShop := fake.ShopServiceFake{
+		FakeUsersById:   fakeUsersById,
+		FakeItemsByType: fakeItemsByType,
+	}
+	fakeAuth := &fake.AuthServiceFake{Token: fakeToken}
+	ctx = auth.SetUserIDToCtx(ctx, 1)
+
+	service := NewService(Deps{
+		Shop: &fakeShop,
+		Auth: fakeAuth,
+	})
+
+	_, err := service.BuyItem(ctx, &pb.BuyItemRequest{
+		Item: "bipki",
+	})
+
+	if err == nil {
+		t.Fatalf("expected error, got none")
+	}
+	if s, ok := status.FromError(err); !ok {
+		t.Fatalf("no code in error")
+	} else if s.Code() != codes.FailedPrecondition {
+		t.Fatalf("expected failed precondition code, got: %s", s.Code().String())
 	}
 }

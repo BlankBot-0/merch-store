@@ -1,6 +1,7 @@
 package merch_store
 
 import (
+	"Merch/internal/auth"
 	"Merch/internal/grpc/server/merch_store/fake"
 	pb "Merch/pkg/api/v1"
 	"context"
@@ -13,6 +14,9 @@ var (
 	fakeUsersById = map[int64]fake.UserFake{
 		1: {1, "petya", 500},
 		2: {2, "vasya", 300},
+	}
+	fakeUserByLogin = map[string]fake.UserFake{
+		"masha": {3, "masha", 500},
 	}
 )
 
@@ -36,7 +40,10 @@ func TestService_SendCoin_InvalidArgument(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeShop := &fake.ShopServiceFake{FakeInfo: fakeInfo, FakeUsersById: fakeUsersById}
+			fakeShop := &fake.ShopServiceFake{
+				FakeInfo:      fakeInfo,
+				FakeUsersById: fakeUsersById,
+			}
 
 			service := NewService(Deps{
 				Shop: fakeShop,
@@ -60,15 +67,23 @@ func TestService_SendCoin_InvalidArgument(t *testing.T) {
 }
 
 func TestService_SendCoin_FailedPrecondition(t *testing.T) {
-	fakeShop := &fake.ShopServiceFake{FakeInfo: fakeInfo, FakeUsersById: fakeUsersById}
-
+	fakeShop := &fake.ShopServiceFake{
+		FakeInfo:         fakeInfo,
+		FakeUsersById:    fakeUsersById,
+		FakeUsersByLogin: fakeUserByLogin,
+	}
+	fakeAuth := fake.AuthServiceFake{
+		Token: fakeToken,
+	}
+	ctx := auth.SetUserIDToCtx(context.Background(), 2)
 	service := NewService(Deps{
 		Shop: fakeShop,
+		Auth: fakeAuth,
 	})
 
-	_, err := service.SendCoin(context.Background(), &pb.SendCoinRequest{
+	_, err := service.SendCoin(ctx, &pb.SendCoinRequest{
 		ToUser: "masha",
-		Amount: 200,
+		Amount: 400,
 	})
 	if err == nil {
 		t.Fatal("expected error, got none")
