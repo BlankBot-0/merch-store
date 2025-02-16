@@ -14,10 +14,6 @@ var (
 		1: {1, "petya", 500},
 		2: {2, "vasya", 300},
 	}
-	fakeUsersByLogin = map[string]fake.UserFake{
-		"petya": {1, "petya", 500},
-		"vasya": {2, "vasya", 300},
-	}
 )
 
 func TestService_SendCoin_InvalidArgument(t *testing.T) {
@@ -63,12 +59,24 @@ func TestService_SendCoin_InvalidArgument(t *testing.T) {
 	}
 }
 
-func TestService_SendCoin
+func TestService_SendCoin_FailedPrecondition(t *testing.T) {
+	fakeShop := &fake.ShopServiceFake{FakeInfo: fakeInfo, FakeUsersById: fakeUsersById}
 
+	service := NewService(Deps{
+		Shop: fakeShop,
+	})
 
+	_, err := service.SendCoin(context.Background(), &pb.SendCoinRequest{
+		ToUser: "masha",
+		Amount: 200,
+	})
+	if err == nil {
+		t.Fatal("expected error, got none")
+	}
 
-{
-name:     "short login",
-receiver: "",
-amount:   40,
-},
+	if s, ok := status.FromError(err); !ok {
+		t.Fatalf("no code error")
+	} else if s.Code() != codes.FailedPrecondition {
+		t.Errorf("expected failed-precondition, got: %d", s.Code())
+	}
+}

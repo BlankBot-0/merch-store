@@ -41,9 +41,9 @@ func (s *ShopServiceFake) SendCoins(_ context.Context, receiverId int64, _ strin
 	return nil
 }
 
-func (s *ShopServiceFake) Info(_ context.Context, userid int64) (models.UserInfo, error) {
+func (s *ShopServiceFake) Info(_ context.Context, userid int64) (*models.UserInfo, error) {
 	if _, ok := s.FakeUsersById[userid]; !ok {
-		return models.UserInfo{}, shop.ErrUserIsNotFound
+		return nil, shop.ErrUserIsNotFound
 	}
-	return s.FakeInfo, nil
+	return &s.FakeInfo, nil
 }

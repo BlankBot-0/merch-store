@@ -18,6 +18,8 @@ func (s *Service) BuyItem(ctx context.Context, request *merch.BuyItemRequest) (*
 		err = status.Errorf(codes.InvalidArgument, "item is not found")
 	} else if errors.Is(err, shop.ErrNotEnoughCoins) {
 		err = status.Errorf(codes.FailedPrecondition, "not enough coins")
+	} else if errors.Is(err, shop.ErrUserIsNotFound) {
+		err = status.Errorf(codes.InvalidArgument, "user is not found")
 	} else if err != nil {
 		err = status.Errorf(codes.Internal, "internal server error")
 	}
