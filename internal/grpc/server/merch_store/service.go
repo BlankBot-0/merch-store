@@ -10,7 +10,7 @@ type (
 	shopService interface {
 		BuyItem(ctx context.Context, userId int64, itemType string) error
 		SendCoins(ctx context.Context, fromUserId int64, toUserLogin string, amount int64) error
-		Info(ctx context.Context, userId int64) (models.UserInfo, error)
+		Info(ctx context.Context, userId int64) (*models.UserInfo, error)
 	}
 	authService interface {
 		UserToken(ctx context.Context, login, password string) (string, error)
