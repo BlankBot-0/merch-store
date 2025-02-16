@@ -41,8 +41,8 @@ func main() {
 		Repo: conn,
 	})
 	authService := auth_service.NewAuthService(auth_service.Deps{
-		Authenticator: authCore,
-		Repo:          conn,
+		Issuer: authCore,
+		Repo:   conn,
 	})
 
 	service := merch_store.NewService(merch_store.Deps{

@@ -14,8 +14,8 @@ type Issuer interface {
 }
 
 type Deps struct {
-	Authenticator Issuer
-	Repo          postgres.DB
+	Issuer Issuer
+	Repo   postgres.DB
 }
 type AuthService struct {
 	Deps
@@ -48,7 +48,7 @@ func (a *AuthService) UserToken(ctx context.Context, login, password string) (st
 		}
 	}
 
-	token, err := a.Deps.Authenticator.Issue(tokenInfo.Id)
+	token, err := a.Deps.Issuer.Issue(tokenInfo.Id)
 	if err != nil {
 		return "", err
 	}

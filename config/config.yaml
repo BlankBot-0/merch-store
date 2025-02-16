@@ -3,9 +3,6 @@ dsn: "postgresql://postgres:password@localhost:5432/shop"
 auth:
   private_key: "secret_key"
   expiration_time: "10m"
-cache:
-  expiration_time: "1m"
-  redis_addr: "redis:6379"
 grpc_server:
   port: 7000
 http_server:

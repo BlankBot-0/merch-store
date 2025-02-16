@@ -44,13 +44,13 @@ func (s *Shop) BuyItem(ctx context.Context, userId int64, itemType string) error
 		}
 
 		if err = tx.RWShop().AddCoins(ctx, userId, -item.Coins); errors.Is(err, postgres.ErrNotChanged) {
-			return fmt.Errorf("failed to withdrawing coins from user %d", user.Id)
+			return fmt.Errorf("failed to withdrawing coins from user %d: %w", user.Id, err)
 		} else if err != nil {
 			return fmt.Errorf("error occured while withdrawing coins from user %d: %w", user.Id, err)
 		}
 
 		if err := tx.RWShop().AddPurchase(ctx, userId, item.Id); errors.Is(err, postgres.ErrNotChanged) {
-			return fmt.Errorf("failed to save purchase information for user %d", user.Id)
+			return fmt.Errorf("failed to save purchase information for user %d: %w", user.Id, err)
 		} else if err != nil {
 			return fmt.Errorf("error occured while saving purchase info for user %d: %w", user.Id, err)
 		}
