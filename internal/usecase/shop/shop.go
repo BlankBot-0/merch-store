@@ -65,6 +65,8 @@ func (s *Shop) SendCoins(ctx context.Context, fromUserId int64, toUserLogin stri
 		return ErrUserIsNotFound
 	} else if err != nil {
 		return fmt.Errorf("unexpected error occured while getting receiver user by login: %w", err)
+	} else if receiver.Id == fromUserId {
+		return nil
 	}
 
 	return s.Deps.Repo.RunInTx(ctx, func(tx postgres.RepositoryProvider) error {
